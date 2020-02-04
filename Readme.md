@@ -1,7 +1,7 @@
 
 ## About
 
-Traditionally when connecting to a VPN, you install the VPN software on your host system and connect. The software then may route all of your host's traffic through the VPN. You change your routes, but some VPN software is pretty heavy handed with re-adding routes. This is overkill and undesirable if all you want is to access only a few services behind the VPN. Sending all your traffic through a VPN has privacy concerns and can slow down your internet connection to the speed of your VPN.
+Traditionally, when connecting to a VPN you install the VPN software on your host system and connect. The software then may route all of your host's traffic through the VPN. You can change your host routes, but some VPN software is pretty heavy handed with re-adding routes. This is overkill and undesirable if all you want is to access only a few services behind the VPN. Sending all your traffic through a VPN has privacy concerns and can slow down your internet connection to the speed of your VPN.
 
 docker-vpn will connect to a remote VPN endpoint within a container and start an SSH server in the same container. You can connect to the SSH server and use normal port forwarding flags like:
 - `-D 1080` - Starts a socks5 proxy on port 1080. Connections using this proxy will be tunneled through SSH into the container and then tunneled to the remote network through the VPN client.
@@ -13,6 +13,8 @@ docker-vpn will connect to a remote VPN endpoint within a container and start an
 The following VPN clients are currently available. I may add more if I find the need.
 - `openvpn` provides an OpenVPN client.
 - `openconnect` provides a Cisco AnyConnect or Juniper Pulse client.
+
+You'll need docker installed to use this project. Here are [install instructions](https://docs.docker.com/install/), just pick your OS. Or you can use `curl -fsSL https://get.docker.com -o get-docker.sh | sh` if you have a supported linux distro and like to live dangerously with `curl | sh`.
 
 ### Build
 

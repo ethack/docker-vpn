@@ -26,7 +26,7 @@ docker build -t vpn .
 
 All the parameters after the `openvpn` or `openconnect` are parameters for the VPN client. Adjust these based on your individual VPN server's settings.
 
-You **must** include authorized keys so that you can authenticate via SSH into the container. You can do this by setting the `AUTHORIZED_KEYS` environment variable or by mapping an `authorized_keys` file into the container to `/root/.ssh/authorized_keys`.
+You **must** include authorized keys so that you can authenticate via SSH into the container. You can do this by setting the `AUTHORIZED_KEYS` environment variable or by mapping a public key (or `authorized_keys`) file into the container to `/root/docker-vpn_keys` (e.g., with `-v /your/key.pub:/root/docker-vpn_keys:ro`). This file will be copied to `/root/.ssh/authorized_keys` with permissions and ownership set to appropriate values. 
 
 Connect to an OpenVPN server using a configuration file and a username and password. Store your configuration file at ~/.vpn/client.ovpn on your host and create ~/.vpn/user.creds that contains your username on the first line and your password on the second line of the file. If you have two factor authentication, it will prompt you for your second factor.
 

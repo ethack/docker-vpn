@@ -20,11 +20,12 @@ chmod 600 /root/.ssh/authorized_keys
 
 # echo "Generating new host keys as necessary..."
 # ssh-keygen -A
+echo "Generating new host keys as necessary..."
+ssh-keygen -A
 
-echo "Starting the ssh daemon..."
-# add -D -e to start in interactive mode with debugging output
-/usr/sbin/sshd
+echo "Starting supervisor..."
+/usr/bin/supervisord --configuration=/etc/supervisord.conf --logfile=/dev/null
 
-# Execute the CMD from the Dockerfile:
+# Execute the command passed to docker (likely a VPN connection command)
 exec "$@"
 

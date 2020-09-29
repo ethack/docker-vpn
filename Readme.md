@@ -1,112 +1,74 @@
-
 ## About
 
-Traditionally, when connecting to a VPN you install the VPN software on your host system and connect. The software then may route all of your host's traffic through the VPN. You can change your host routes, but some VPN software is pretty heavy handed with re-adding routes. This is overkill and undesirable if all you want is to access only a few services behind the VPN. Sending all your traffic through a VPN has privacy concerns and can slow down your internet connection to the speed of your VPN.
+docker-vpn is an alternative to installing VPN software on your host system and routing all your traffic through a VPN. This is useful if you want to have control over which traffic is sent through the VPN. Sending all your traffic through a VPN has privacy concerns and can slow down your internet connection to the speed of your VPN.
 
-docker-vpn will connect to a remote VPN endpoint within a container and start an SSH server in the same container. You can connect to the SSH server and use normal port forwarding flags like:
-- `-D 1080` - Starts a socks5 proxy on port 1080. Connections using this proxy will be tunneled through SSH into the container and then tunneled to the remote network through the VPN client.
-- `-L 80:remote.example.com:80` - Forwards port 80 on remote.example.com so that you can access it from localhost:80.
-- `-J root@localhost:2222 user@remote.example.com` - Uses docker-vpn as an SSH jump host to SSH to remote.example.com. (Requires OpenSSH 7.3)
+The [`ethack/vpn`](https://hub.docker.com/r/ethack/vpn) Docker image and accompanying shell script provides the following:
+- OpenVPN client
+- Cisco AnyConnect or Juniper Pulse client
+- SSH server (default port 2222) with public key authentication enabled and configured
+- SOCKS 5 server (default port 1080)
+- SSH config file entry created for each VPN connection
+
+## Install
+
+- [Install Docker](https://docs.docker.com/install/) using the instructions or use `curl -fsSL https://get.docker.com -o get-docker.sh | sh` if you have a supported linux distro and like to live dangerously.
+- Source `vpn.sh` in your `.bashrc` file or current shell. E.g. `source vpn.sh`
 
 ## Usage
 
-The following VPN clients are currently available. I may add more if I find the need.
-- `openvpn` provides an OpenVPN client.
-- `openconnect` provides a Cisco AnyConnect or Juniper Pulse client.
+```
+# openvpn NAME [OpenVPN args...]
+# e.g.
+openvpn foo https://vpn.example.com
 
-You'll need docker installed to use this project. Here are [install instructions](https://docs.docker.com/install/), just pick your OS. Or you can use `curl -fsSL https://get.docker.com -o get-docker.sh | sh` if you have a supported linux distro and like to live dangerously with `curl | sh`.
-
-### Build
-
-```bash
-docker build -t vpn .
+# openconnect NAME [OpenConnect args...]
+# e.g.
+openconnect bar https://vpn.example.com
 ```
 
-### Examples
+The first argument is an arbitrary name that you give your VPN connection. This is used in the Docker container names and the SSH config file. The rest of the arguments are passed to the VPN client. Each example above will connect to a VPN located at vpn.example.com.
 
-All the parameters after the `openvpn` or `openconnect` are parameters for the VPN client. Adjust these based on your individual VPN server's settings.
+Once connected, you will see a message telling you which ports are available and the name of the ssh config profile.
 
-You **must** include authorized keys so that you can authenticate via SSH into the container. You can do this by setting the `AUTHORIZED_KEYS` environment variable or by mapping a public key (or `authorized_keys`) file into the container to `/root/docker-vpn_keys` (e.g., with `-v /your/key.pub:/root/docker-vpn_keys:ro`). This file will be copied to `/root/.ssh/authorized_keys` with permissions and ownership set to appropriate values. 
-
-Connect to an OpenVPN server using a configuration file and a username and password. Store your configuration file at ~/.vpn/client.ovpn on your host and create ~/.vpn/user.creds that contains your username on the first line and your password on the second line of the file. If you have two factor authentication, it will prompt you for your second factor.
-
-```bash
-export AUTHORIZED_KEYS="$(cat ~/.ssh/id_rsa.pub)"
-docker run -it --rm --cap-add=NET_ADMIN --device /dev/net/tun -e AUTHORIZED_KEYS -v ~/.vpn:/vpn -p 2222:22 vpn openvpn --auth-retry interact --config /vpn/client.ovpn --auth-user-pass /vpn/user.creds
+```
+============================================
+SSH Port: 2222
+SOCKS Proxy Port: 1080
+Use: ssh foo
+============================================
 ```
 
-Connect to a Cisco VPN server located at https://remote.vpn and prompt for credentials.
+### OpenVPN Config File
 
-```bash
-export AUTHORIZED_KEYS="$(cat ~/.ssh/id_rsa.pub)"
-docker run --rm -it --cap-add=NET_ADMIN --device /dev/net/tun -e AUTHORIZED_KEYS -p 2222:22 vpn openconnect https://remote.vpn
+```
+openvpn foo
 ```
 
-A docker-compose file would be very useful to store frequently used configurations. Here are equivalents for the above docker commands.
-```yaml
-version: '3'
+To connect to the `foo` VPN put your config file at `~/.vpn/foo.ovpn` and then you can run `openvpn foo` to automatically use the corresponding config file.
 
-services:
-  openvpn:
-    image: vpn
-    build:
-      context: .
-      dockerfile: Dockerfile
-    cap_add:
-      - net_admin
-    devices:
-      - /dev/net/tun
-    environment:
-      - AUTHORIZED_KEYS
-    ports:
-      - '2222:22'
-    command: ["openvpn", "--config", "/vpn/client.ovpn", "--auth-user-pass", "/vpn/user.creds", "--auth-retry", "interact"]
-    volumes:
-      - ~/.vpn:/vpn
+You can optionally put your credentials in `~/.vpn/foo.creds`. The username goes on the first line and the password on the second line. This gives up some security for the convenience of not having to enter your username and password. You will still be prompted for your 2FA code if your VPN endpoint requires it. You can run `chmod 600 ~/.vpn/foo.creds` to ensure only the file owner can read it.
 
-  openconnect:
-    image: vpn
-    build:
-      context: .
-      dockerfile: Dockerfile
-    cap_add:
-      - net_admin
-    devices:
-      - /dev/net/tun
-    environment:
-      - AUTHORIZED_KEYS
-    ports:
-      - '2222:22'
-    command: ["openconnect", "https://remote.vpn"]
-```
+## Customizing
 
-You'd then use these with:
-```bash
-export AUTHORIZED_KEYS="$(cat ~/.ssh/id_rsa.pub)"
-docker-compose run --rm --service-ports openvpn
-docker-compose run --rm --service-ports openconnect
-```
+You can customize options by setting the following environment variables. The defaults are shown below.
 
-Another option could be to set up shell aliases.
-```bash
-alias openvpn="docker run -it --rm --cap-add=NET_ADMIN --device /dev/net/tun -v ~/.vpn:/vpn -P -e AUTHORIZED_KEYS=\"$(cat ~/.ssh/id_rsa.pub)\" vpn openvpn"
-alias openconnect="docker run -it --rm --cap-add=NET_ADMIN --device /dev/net/tun -P -e AUTHORIZED_KEYS=\"$(cat ~/.ssh/id_rsa.pub)\" vpn openconnect"
-```
+* `BIND_INTERFACE`: 127.0.0.1
+* `SSH_PORT`: 2222
+* `SOCKS_PORT`: 1080
+* `AUTHORIZED_KEYS`: Any keys allowed to SSH as the current user to the current machine, any keys configured in `ssh-agent`, and any keys found in `~/.ssh/*.pub`.
 
-And then you would pass arguments exactly like you would to the normal VPN clients, with the difference being any paths you specify would be wherever you mounted your files into the docker container:
-```bash
-openvpn --auth-retry interact --config /vpn/client.ovpn --auth-user-pass /vpn/user.creds
-openconnect https://remote.vpn
-```
+### Advanced Forwarding
 
-In the alias the port to use will be mapped at random to avoid conflicts. You can use `docker ps` to see which port on localhost to SSH to.
+docker-vpn provides all the power of an OpenSSH server. For example:
+
+* Dynamic port forwarding (SOCKS proxy) `ssh -D 1080 foo` - Starts a socks5 proxy on port 1080. Connections using this proxy will be tunneled through SSH into the container and then tunneled to the `foo` network through the VPN client.
+* Local port forwarding `ssh -L 8080:private.foo.com:80 foo` - Forwards port 80 on private.foo.com so that you can access it from localhost:8080.
+* Jump hosts `ssh -J foo user@private.foo.com` - Allows connecting via SSH to a remote server private.foo.com that is not directly accessible but is accessible by using the docker-vpn `foo` as a jump host. (Requires OpenSSH 7.3)
+* TUN/TAP support - SSH has [builtin tunneling support](https://wiki.archlinux.org/index.php/VPN_over_SSH#OpenSSH's_built_in_tunneling). This is similar to just connecting directly with OpenVPN or OpenConnect software, but gives you the power (and responsibility) to configure your own routing.
 
 ## Limitations
 - If you have multiple VPNs you want to connect to at once, you have to choose ports that do not conflict.
 - VPN configurations can be wildly different. I created these to make my specific use case easier. Other configurations may require passing in your own command line options and adding your own volume mounts.
-
-## Future Plans
-- Find a way to support split tunneling so that VPN traffic can be routed through the docker container while non-VPN traffic can go out your default gateway. Likely with custom routes and iptables rules, or by somehow sharing the tun adapter with the container and the host. VPNs can support split tunneling natively, but I'd rather not fight with their configurations directly.
 
 ## Credits
 - https://github.com/Praqma/alpine-sshd

@@ -38,6 +38,10 @@ Use: ssh foo
 ============================================
 ```
 
+I recommend using a proxy switcher browser extension like one of the following. This allows you to quickly switch proxies on/off or tunnel certain websites through a proxy while letting all other traffic go through your default gateway.
+* Proxy SwitchyOmega [[source]](https://github.com/FelisCatus/SwitchyOmega) [[Chrome]](https://chrome.google.com/webstore/detail/proxy-switchyomega/padekgcemlokbadohgkifijomclgjgif) [[Firefox]](https://addons.mozilla.org/en-US/firefox/addon/switchyomega/)
+* FoxyProxy Standard [[source]](https://github.com/foxyproxy/firefox-extension) [[Firefox]](https://addons.mozilla.org/en-US/firefox/addon/foxyproxy-standard/)
+
 ### OpenVPN Config File
 
 ```

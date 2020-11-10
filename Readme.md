@@ -1,8 +1,8 @@
 ## About
 
-docker-vpn is an alternative to installing VPN software on your host system and routing all your traffic through a VPN. This is useful if you want to have control over which traffic is sent through the VPN. Sending all your traffic through a VPN has privacy concerns and can slow down your internet connection to the speed of your VPN.
+docker-vpn is an alternative to installing VPN software on your host system and routing all your traffic through a VPN. This is useful if you want to have control over which traffic is sent through the VPN. Sending all your traffic through a VPN is a privacy concern and limits your internet connection to the speed of your VPN.
 
-The [`ethack/vpn`](https://hub.docker.com/r/ethack/vpn) Docker image and accompanying shell script provides the following:
+The [`ethack/vpn`](https://hub.docker.com/r/ethack/vpn) Docker image and accompanying shell script provide the following:
 - OpenVPN client
 - Cisco AnyConnect or Juniper Pulse client
 - SSH server (default port 2222) with public key authentication enabled and configured

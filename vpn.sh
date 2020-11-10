@@ -61,8 +61,8 @@ openvpn() {
     ssh-config "$vpnName" "$sshPort" > "$HOME/.ssh/config.d/vpn-$vpnName"
 
     echo "============================================"
-    echo "SSH Port: $sshPort"
-	echo "SOCKS Proxy Port: $socksPort"
+    echo "SSH Port: $sshPort (customize with SSH_PORT)"
+    echo "SOCKS Proxy Port: $socksPort (customize with SOCKS_PORT)"
     echo "Use: ssh $vpnName"
     echo "============================================"
 
@@ -121,8 +121,8 @@ openconnect() {
     ssh-config "$vpnName" "$sshPort" > "$HOME/.ssh/config.d/vpn-$vpnName"
 
     echo "============================================"
-    echo "SSH Port: $sshPort"
-	echo "SOCKS Proxy Port: $socksPort"
+    echo "SSH Port: $sshPort (customize with SSH_PORT)"
+    echo "SOCKS Proxy Port: $socksPort (customize with SOCKS_PORT)"
     echo "Use: ssh $vpnName"
     echo "============================================"
 

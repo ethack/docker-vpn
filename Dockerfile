@@ -5,6 +5,7 @@ RUN apk add --no-cache \
     openconnect \
     && apk add --no-cache openvpn openssh \
     && apk add --no-cache py3-pip \
+    && apk add --no-cache bind-tools curl \
     && pip --no-cache-dir install pproxy supervisor
 
 # create the root user's .ssh directory

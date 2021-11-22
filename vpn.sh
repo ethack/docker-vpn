@@ -108,6 +108,10 @@ openconnect() {
     dockerCmd+=("--publish" "$bindIf:$sshPort:22")
     dockerCmd+=("--publish" "$bindIf:$socksPort:1080")
     dockerCmd+=("--env" "AUTHORIZED_KEYS=$authorizedKeys")
+    if [ -f "$vpnConfig/$vpnName.xml" ]; then
+        dockerCmd+=("--mount" "type=bind,src=$vpnConfig/$vpnName.xml,dst=/vpn/config,readonly=true")
+        vpnCmd+=("--xmlconfig" "/vpn/config")
+    fi
     dockerCmd+=("$dockerImage")
 
     # append any extra args provided

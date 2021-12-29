@@ -123,7 +123,7 @@ openconnect() {
 
     setup-ssh-config.d
     ssh-config "$vpnName" "$sshPort" > "$HOME/.ssh/config.d/vpn-$vpnName"
-    chown 600 "$HOME/.ssh/config.d/vpn-$vpnName"
+    chmod 600 "$HOME/.ssh/config.d/vpn-$vpnName"
 
     echo "============================================"
     echo "SSH Port: $sshPort (customize with SSH_PORT)"

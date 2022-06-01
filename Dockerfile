@@ -1,12 +1,16 @@
 FROM alpine:edge
 
 RUN apk add --no-cache \
-    --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/ \
+    --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/ \
     openconnect \
     && apk add --no-cache openvpn openssh \
     && apk add --no-cache py3-pip \
     && apk add --no-cache bind-tools curl \
     && pip --no-cache-dir install pproxy supervisor
+
+RUN rm -f /etc/vpnc/vpnc-script \    
+    && wget https://gitlab.com/openconnect/vpnc-scripts/-/raw/master/vpnc-script -O /etc/vpnc/vpnc-script \
+    && chmod +x /etc/vpnc/vpnc-script
 
 # create the root user's .ssh directory
 # unlock the root account

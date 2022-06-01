@@ -8,6 +8,12 @@ RUN apk add --no-cache \
     && apk add --no-cache bind-tools curl \
     && pip --no-cache-dir install pproxy supervisor
 
+# Fix Cannot open "/proc/sys/net/ipv4/route/flush": Read-only file system
+# See https://serverfault.com/questions/878443/when-running-vpnc-in-docker-get-cannot-open-proc-sys-net-ipv4-route-flush 
+RUN rm -f /etc/vpnc/vpnc-script \    
+    && wget https://gitlab.com/openconnect/vpnc-scripts/-/raw/master/vpnc-script?inline=false -O /etc/vpnc/vpnc-script \
+    && chmod +x /etc/vpnc/vpnc-script
+    
 # create the root user's .ssh directory
 # unlock the root account
 RUN mkdir /root/.ssh \

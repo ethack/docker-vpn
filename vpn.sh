@@ -51,7 +51,7 @@ openvpn() {
     dockerCmd+=("$dockerImage")
 
     # append any extra args provided
-    vpnCmd+=($@)
+    vpnCmd+=("$@")
     # display help if there are no arguments at this point
     if [ ${#vpnCmd[@]} -eq 1 ]; then
         vpnCmd+=("--help")
@@ -115,7 +115,7 @@ openconnect() {
     dockerCmd+=("$dockerImage")
 
     # append any extra args provided
-    vpnCmd+=($@)
+    vpnCmd+=("$@")
     # display help if there are no arguments at this point
     if [ ${#vpnCmd[@]} -eq 1 ]; then
         vpnCmd+=("--help")

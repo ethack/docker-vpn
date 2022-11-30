@@ -82,6 +82,8 @@ openconnect() {
     local authorizedKeys="${AUTHORIZED_KEYS}"
     
     local vpnConfig="$HOME/.vpn"
+    local vpnProfile="$vpnConfig/$vpnName.profile"
+    local vpnSecret="$vpnConfig/$vpnName.secret"
     local dockerImage="ethack/vpn"
     
     # AUTHORIZED_KEYS not specified. Use some defaults.
@@ -102,7 +104,7 @@ openconnect() {
     local vpnCmd=("openconnect")
     dockerCmd+=("--rm" "--name" "vpn-$vpnName")
     dockerCmd+=("--hostname" "vpn-$vpnName")
-    dockerCmd+=("--interactive" "--tty")
+    dockerCmd+=("--interactive")
     dockerCmd+=("--cap-add" "NET_ADMIN")
     dockerCmd+=("--device" "/dev/net/tun")
     dockerCmd+=("--publish" "$bindIf:$sshPort:22")
@@ -112,7 +114,20 @@ openconnect() {
         dockerCmd+=("--mount" "type=bind,src=$vpnConfig/$vpnName.xml,dst=/vpn/config,readonly=true")
         vpnCmd+=("--xmlconfig" "/vpn/config")
     fi
-    dockerCmd+=("$dockerImage")
+    if [ -f "${vpnProfile}" ]; then
+        source "${vpnProfile}"
+        vpnCmd+=("${OC_HOST}")
+        vpnCmd+=("--user" "${OC_USER}")
+
+        if [ -f "${vpnSecret}" ]; then
+            vpnCmd+=("--passwd-on-stdin")
+        else
+            vpnCmd+=("--no-passwd")
+        fi
+        if ! [ -z "{$OC_GROUP}" ]; then
+            vpnCmd+=("--authgroup" "${OC_GROUP}")
+        fi
+    fi
 
     # append any extra args provided
     vpnCmd+=("$@")
@@ -131,7 +146,76 @@ openconnect() {
     echo "Use: ssh $vpnName"
     echo "============================================"
 
-    "${dockerCmd[@]}" "${vpnCmd[@]}"
+    if [ -f "${vpnSecret}" ]; then
+        dockerCmd+=("--interactive")
+        dockerCmd+=("$dockerImage")
+        cat "${vpnSecret}" - | "${dockerCmd[@]}" "${vpnCmd[@]}"
+    else
+        dockerCmd+=("--interactive" "--tty")
+        dockerCmd+=("$dockerImage")
+        "${dockerCmd[@]}" "${vpnCmd[@]}"
+    fi
+}
+
+openconnect_new_profile() {
+    echo "This tool will create automatic OpenConnect profile to allow automatic connections"
+    echo
+
+    echo -n "Name for the profile: "
+    read -r vpnProfile
+    if ! [[ "${vpnProfile}" =~ ^[A-Za-z0-9_]+$ ]]; then
+        echo "Profile name should only contain letters, numbers, and underscores!"
+        return 1
+    fi
+    local vpnProfilePath="$HOME/.vpn/${vpnProfile}.profile"
+    if [[ -f "${vpnProfilePath}" ]]; then
+        echo "Profile \"${vpnProfile}\" already exists in ${vpnProfilePath}"
+        return 1
+    fi
+
+    echo -n "Hostname: "
+    read -r vpnHost
+
+    echo -n "Port [443]: "
+    read -r vpnPort
+
+    echo -n "Username: "
+    read -r vpnUser
+
+    echo -n "Password: "
+    read -s -r vpnPass
+    echo
+
+    local vpnHostPort="${vpnHost}"
+    if [[ ! -z "${vpnPort}" ]]; then
+        vpnHostPort+="${vpnPort}"
+    fi
+    echo
+    echo "Some VPNs require group code. Go to https://${vpnHostPort}/ and see if there's a \"GROUP\" dropdown present. It will show all possible group codes. If there's no such dropdown leave this field empty."
+    echo -n "Group: "
+    read -r vpnGroup
+
+    echo
+    echo "If your VPN requires two-factor authentication you need to specify its type. Usually it will be one of the following: pin, push, phone, sms. If your VPN doesn't use 2FA leave this field empty."
+    echo -n "2FA Type: "
+    read -r vpn2FaType
+
+    printf "OC_HOST=%q\n" "${vpnHostPort}" >> "${vpnProfilePath}"
+    printf "OC_USER=%q\n" "${vpnUser}" >> "${vpnProfilePath}"
+    printf "OC_GROUP=%q\n" "${vpnGroup}" >> "${vpnProfilePath}"
+
+    local vpnSecretPath="$HOME/.vpn/${vpnProfile}.secret"
+    echo "${vpnPass}" > "${vpnSecretPath}"
+    if ! [ -z "${vpn2FaType}" ]; then
+       echo "${vpn2FaType}" >> "${vpnSecretPath}"
+    fi
+
+    chmod 0400 "${vpnProfilePath}"
+    chmod 0400 "${vpnSecretPath}"
+
+    echo
+    echo "Your new profile has been saved in ${vpnProfilePath} and ${vpnSecretPath}"
+    echo "Connect by typing: openconnect ${vpnProfile}"
 }
 
 # Create and configure the .ssh/config.d directory if it's not already

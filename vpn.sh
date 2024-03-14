@@ -216,8 +216,6 @@ openconnect() {
     echo "HTTP Proxy Port: $httpProxyPort (customize with HTTP_PROXY_PORT)"
     echo "Use: ssh $vpnName"
     echo "============================================"
-    
-    echo "${dockerCmd[@]}" "${vpnCmd[@]}"
 
     if [ -f "${vpnSecret}" ]; then
         dockerCmd+=("--interactive")

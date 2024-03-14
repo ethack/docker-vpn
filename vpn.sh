@@ -9,6 +9,7 @@ openvpn() {
     # listen on localhost by default
     local bindIf="${BIND_INTERFACE:-127.0.0.1}"
     local socksPort="${SOCKS_PORT:-1080}"
+    local httpProxyPort="${HTTP_PROXY_PORT:-1088}"
     local sshPort="${SSH_PORT:-2222}"
     local authorizedKeys="${AUTHORIZED_KEYS}"
     
@@ -38,6 +39,7 @@ openvpn() {
     dockerCmd+=("--device" "/dev/net/tun")
     dockerCmd+=("--publish" "$bindIf:$sshPort:22")
     dockerCmd+=("--publish" "$bindIf:$socksPort:1080")
+    dockerCmd+=("--publish" "$bindIf:$httpProxyPort:3128")
     dockerCmd+=("--env" "AUTHORIZED_KEYS=$authorizedKeys")
     if [ -f "$vpnConfig/$vpnName.ovpn" ]; then
         dockerCmd+=("--mount" "type=bind,src=$vpnConfig/$vpnName.ovpn,dst=/vpn/config,readonly=true")
@@ -47,6 +49,36 @@ openvpn() {
         dockerCmd+=("--mount" "type=bind,src=$vpnConfig/$vpnName.creds,dst=/vpn/creds,readonly=true")
         vpnCmd+=("--auth-user-pass" "/vpn/creds")
         vpnCmd+=("--auth-retry" "interact")
+    fi
+    if [ -f "$vpnConfig/$vpnName.env" ]; then
+        dockerCmd+=("--env-file" "$vpnConfig/$vpnName.env")
+    fi
+    if [ -f "$vpnConfig/$vpnName.hosts" ]; then
+        while IFS= read -r line; do
+          # Skip commented lines and empty lines
+          case "$line" in
+              \#* | "")
+                  continue
+                  ;;
+          esac
+          hostname=$(echo "$line" | awk '{print $2}')
+          ip=$(echo "$line" | awk '{print $1}')
+          dockerCmd+=("--add-host" "$ip:$hostname")
+        done < "$vpnConfig/$vpnName.hosts"
+    fi
+    # add custom mounts
+    if [ -f "$vpnConfig/$vpnName.mounts" ]; then
+        while IFS= read -r line; do
+          # Skip commented lines and empty lines
+          case "$line" in
+              \#* | "")
+                  continue
+                  ;;
+          esac
+          file_remote=$(echo "$line" | awk '{print $2}')
+          file_local=$(echo "$line" | awk '{print $1}')
+          dockerCmd+=("--mount" "type=bind,src=$file_local,dst=$file_remote,readonly=true")
+        done < "$vpnConfig/$vpnName.mounts"
     fi
     dockerCmd+=("$dockerImage")
 
@@ -63,6 +95,7 @@ openvpn() {
     echo "============================================"
     echo "SSH Port: $sshPort (customize with SSH_PORT)"
     echo "SOCKS Proxy Port: $socksPort (customize with SOCKS_PORT)"
+    echo "HTTP Proxy Port: $httpProxyPort (customize with HTTP_PROXY_PORT)"
     echo "Use: ssh $vpnName"
     echo "============================================"
 
@@ -78,6 +111,7 @@ openconnect() {
     # listen on localhost by default
     local bindIf="${BIND_INTERFACE:-127.0.0.1}"
     local socksPort="${SOCKS_PORT:-1080}"
+    local httpProxyPort="${HTTP_PROXY_PORT:-1088}"
     local sshPort="${SSH_PORT:-2222}"
     local authorizedKeys="${AUTHORIZED_KEYS}"
     
@@ -109,11 +143,47 @@ openconnect() {
     dockerCmd+=("--device" "/dev/net/tun")
     dockerCmd+=("--publish" "$bindIf:$sshPort:22")
     dockerCmd+=("--publish" "$bindIf:$socksPort:1080")
+    dockerCmd+=("--publish" "$bindIf:$httpProxyPort:3128")
     dockerCmd+=("--env" "AUTHORIZED_KEYS=$authorizedKeys")
     if [ -f "$vpnConfig/$vpnName.xml" ]; then
         dockerCmd+=("--mount" "type=bind,src=$vpnConfig/$vpnName.xml,dst=/vpn/config,readonly=true")
         vpnCmd+=("--xmlconfig" "/vpn/config")
     fi
+    if [ -f "$vpnConfig/$vpnName.config" ]; then
+        dockerCmd+=("--mount" "type=bind,src=$vpnConfig/$vpnName.config,dst=/vpn/openconnect.config,readonly=true")
+        vpnCmd+=("--config" "/vpn/openconnect.config")
+    fi
+    if [ -f "$vpnConfig/$vpnName.env" ]; then
+        dockerCmd+=("--env-file" "$vpnConfig/$vpnName.env")
+    fi
+    if [ -f "$vpnConfig/$vpnName.hosts" ]; then
+        while IFS= read -r line; do
+          # Skip commented lines and empty lines
+          case "$line" in
+              \#* | "")
+                  continue
+                  ;;
+          esac
+          hostname=$(echo "$line" | awk '{print $2}')
+          ip=$(echo "$line" | awk '{print $1}')
+          dockerCmd+=("--add-host" "$ip:$hostname")
+        done < "$vpnConfig/$vpnName.hosts"
+    fi
+    # add custom mounts
+    if [ -f "$vpnConfig/$vpnName.mounts" ]; then
+        while IFS= read -r line; do
+          # Skip commented lines and empty lines
+          case "$line" in
+              \#* | "")
+                  continue
+                  ;;
+          esac
+          file_remote=$(echo "$line" | awk '{print $2}')
+          file_local=$(echo "$line" | awk '{print $1}')
+          dockerCmd+=("--mount" "type=bind,src=$file_local,dst=$file_remote")
+        done < "$vpnConfig/$vpnName.mounts"
+    fi
+
     if [ -f "${vpnProfile}" ]; then
         source "${vpnProfile}"
         vpnCmd+=("${OC_HOST}")
@@ -143,8 +213,11 @@ openconnect() {
     echo "============================================"
     echo "SSH Port: $sshPort (customize with SSH_PORT)"
     echo "SOCKS Proxy Port: $socksPort (customize with SOCKS_PORT)"
+    echo "HTTP Proxy Port: $httpProxyPort (customize with HTTP_PROXY_PORT)"
     echo "Use: ssh $vpnName"
     echo "============================================"
+    
+    echo "${dockerCmd[@]}" "${vpnCmd[@]}"
 
     if [ -f "${vpnSecret}" ]; then
         dockerCmd+=("--interactive")

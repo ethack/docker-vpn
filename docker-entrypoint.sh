@@ -23,9 +23,12 @@ chmod 600 /root/.ssh/authorized_keys
 echo "Generating new host keys as necessary..."
 ssh-keygen -A
 
+# move internal key so that ssh localhost works inside the container
+cp /etc/ssh/ssh_host_ed25519_key /root/.ssh/id_ed25519
+cat /etc/ssh/ssh_host_ed25519_key.pub >> /root/.ssh/authorized_keys
+
 echo "Starting supervisor..."
 /usr/bin/supervisord --configuration=/etc/supervisord.conf --logfile=/dev/null
 
 # Execute the command passed to docker (likely a VPN connection command)
 exec "$@"
-

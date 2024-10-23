@@ -35,7 +35,7 @@ Once connected, you will see a message telling you which ports are available and
 ============================================
 SSH Port: 2222
 SOCKS Proxy Port: 1080
-HTTP Proxy Port: 1080
+HTTP Proxy Port: 1088
 Use: ssh foo
 ============================================
 ```

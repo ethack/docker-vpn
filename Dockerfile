@@ -1,4 +1,4 @@
-FROM alpine:3.18.6
+FROM alpine:3.21.2
 
 RUN apk add --no-cache \
     --repository https://dl-cdn.alpinelinux.org/alpine/edge/testing/ \
@@ -6,8 +6,8 @@ RUN apk add --no-cache \
     && apk add --no-cache openvpn openssh \
     && apk add --no-cache py3-pip \
     && apk add --no-cache bind-tools curl \
-    && apk add --no-cache supervisor \
-    && apk add --no-cache py3-pproxy \
+    && apk add --no-cache supervisor
+RUN pip install --break-system-packages pproxy[accelerated]
 
 # Fix Cannot open "/proc/sys/net/ipv4/route/flush": Read-only file system
 # See https://serverfault.com/questions/878443/when-running-vpnc-in-docker-get-cannot-open-proc-sys-net-ipv4-route-flush 
@@ -24,7 +24,6 @@ RUN mkdir /root/.ssh \
 COPY docker-entrypoint.sh /
 COPY etc/ssh/sshd_config /etc/ssh/
 COPY etc/supervisord.conf /etc/
-COPY etc/squid.conf /etc/squid/
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 

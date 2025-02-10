@@ -143,7 +143,7 @@ openconnect() {
     dockerCmd+=("--device" "/dev/net/tun")
     dockerCmd+=("--publish" "$bindIf:$sshPort:22")
     dockerCmd+=("--publish" "$bindIf:$socksPort:1080")
-    dockerCmd+=("--publish" "$bindIf:$httpProxyPort:3128")
+    dockerCmd+=("--publish" "$bindIf:$httpProxyPort:1088")
     dockerCmd+=("--env" "AUTHORIZED_KEYS=$authorizedKeys")
     if [ -f "$vpnConfig/$vpnName.xml" ]; then
         dockerCmd+=("--mount" "type=bind,src=$vpnConfig/$vpnName.xml,dst=/vpn/config,readonly=true")

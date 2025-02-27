@@ -93,14 +93,14 @@ The hosts will then be added one by one to the docker command args, which would 
 the container. See docker [--add-host option](https://docs.docker.com/reference/cli/docker/container/run/#add-host) for
 more information.
 
-# Custom ENV
+### Custom ENV
 
 You can add a custom env that is then passed to the docker cli using the file `~/.vpn/NAME.env`, `NAME` being
 the profile config for either openconnect or openvpn. See 
 [--env-file option](https://docs.docker.com/compose/environment-variables/set-environment-variables/#substitute-with---env-file) 
 for more information.
 
-# Custom mounts
+### Custom mounts
 
 To mount custom files or folders on the container, add a file `~/.vpn/NAME.mounts`, `NAME` being the profile for either
 openconnect or openvpn. The file follows the same format as the hosts file, where the first element is the local file,
@@ -109,6 +109,8 @@ and the second is the remote file:
 ```
 /local/file/to/be/mounted   /container/mount/point
 ```
+
+Please note that **neither of the file paths can contain spaces.**
 
 ### Advanced Forwarding
 

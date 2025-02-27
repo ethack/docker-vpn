@@ -54,7 +54,7 @@ openvpn() {
         dockerCmd+=("--env-file" "$vpnConfig/$vpnName.env")
     fi
     if [ -f "$vpnConfig/$vpnName.hosts" ]; then
-        while IFS= read -r line; do
+        while IFS= read -r line || [ -n "$line" ]; do
           # Skip commented lines and empty lines
           case "$line" in
               \#* | "")
@@ -68,7 +68,7 @@ openvpn() {
     fi
     # add custom mounts
     if [ -f "$vpnConfig/$vpnName.mounts" ]; then
-        while IFS= read -r line; do
+        while IFS= read -r line || [ -n "$line" ]; do
           # Skip commented lines and empty lines
           case "$line" in
               \#* | "")
@@ -157,7 +157,7 @@ openconnect() {
         dockerCmd+=("--env-file" "$vpnConfig/$vpnName.env")
     fi
     if [ -f "$vpnConfig/$vpnName.hosts" ]; then
-        while IFS= read -r line; do
+        while IFS= read -r line || [ -n "$line" ]; do
           # Skip commented lines and empty lines
           case "$line" in
               \#* | "")
@@ -171,7 +171,7 @@ openconnect() {
     fi
     # add custom mounts
     if [ -f "$vpnConfig/$vpnName.mounts" ]; then
-        while IFS= read -r line; do
+        while IFS= read -r line || [ -n "$line" ]; do
           # Skip commented lines and empty lines
           case "$line" in
               \#* | "")

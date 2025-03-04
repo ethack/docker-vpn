@@ -7,6 +7,7 @@ The [`ethack/vpn`](https://hub.docker.com/r/ethack/vpn) Docker image and accompa
 - Cisco AnyConnect or Juniper Pulse client
 - SSH server (default port 2222) with public key authentication enabled and configured
 - SOCKS 5 server (default port 1080)
+- HTTP Proxy server (default port 1088)
 - SSH config file entry created for each VPN connection
 
 ## Install
@@ -34,6 +35,7 @@ Once connected, you will see a message telling you which ports are available and
 ============================================
 SSH Port: 2222
 SOCKS Proxy Port: 1080
+HTTP Proxy Port: 1088
 Use: ssh foo
 ============================================
 ```
@@ -54,7 +56,7 @@ You can optionally put your credentials in `~/.vpn/foo.creds`. The username goes
 
 ### OpenConnect Profile
 
-OpenConnect offers an additional interactive command `openconnect_new_profile` which will guide you through a creation of a configuration profile. Once created, the profile is saved in `~/.vpn/NAME.profile` and `~/.vpn/NAME.secret`. To connect using a profile you can simply use `openconnect NAME` and the VPN connection will be established without any interaction. Currently the following options are supported:
+OpenConnect offers an additional interactive command `openconnect_new_profile` which will guide you through a creation of a configuration profile. Once created, the profile is saved in `~/.vpn/NAME.profile` and `~/.vpn/NAME.secret`. To connect using a profile you can simply use `openconnect NAME` and the VPN connection will be established without any interaction. Currently, the following options are supported:
 
 - Hostname & optional port
 - Username authentication
@@ -63,6 +65,10 @@ OpenConnect offers an additional interactive command `openconnect_new_profile` w
   - with password & external 2-factor authentication
 - Connection group
 
+If you need custom configs for the openconnect client, you can create a file called `~/.vpn/foo.config` where you can 
+use the wide range of configuration available at the [openconnect documentation](https://www.infradead.org/openconnect/manual.html).
+The file would be mounted inside the container and passed to the CLI with `--config` option.
+
 ## Customizing
 
 You can customize options by setting the following environment variables. The defaults are shown below.
@@ -70,7 +76,41 @@ You can customize options by setting the following environment variables. The de
 * `BIND_INTERFACE`: 127.0.0.1
 * `SSH_PORT`: 2222
 * `SOCKS_PORT`: 1080
+* `HTTP_PROXY_PORT`: 1088
 * `AUTHORIZED_KEYS`: Any keys allowed to SSH as the current user to the current machine, any keys configured in `ssh-agent`, and any keys found in `~/.ssh/*.pub`.
+
+### Custom hosts
+
+In order to have custom hostname resolution done inside the container, you can add a `~/.vpn/NAME.hosts`, `NAME` being
+the profile config for either openconnect or openvpn. The format of the files follows the same standard as your 
+/etc/hosts file:
+
+```
+my-custom-hostname  1.1.1.1
+```
+
+The hosts will then be added one by one to the docker command args, which would then edit the `/etc/hosts` file inside
+the container. See docker [--add-host option](https://docs.docker.com/reference/cli/docker/container/run/#add-host) for
+more information.
+
+### Custom ENV
+
+You can add a custom env that is then passed to the docker cli using the file `~/.vpn/NAME.env`, `NAME` being
+the profile config for either openconnect or openvpn. See 
+[--env-file option](https://docs.docker.com/compose/environment-variables/set-environment-variables/#substitute-with---env-file) 
+for more information.
+
+### Custom mounts
+
+To mount custom files or folders on the container, add a file `~/.vpn/NAME.mounts`, `NAME` being the profile for either
+openconnect or openvpn. The file follows the same format as the hosts file, where the first element is the local file,
+and the second is the remote file:
+
+```
+/local/file/to/be/mounted   /container/mount/point
+```
+
+Please note that **neither of the file paths can contain spaces.**
 
 ### Advanced Forwarding
 
